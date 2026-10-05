@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Owner Dashboard</title>
+
+    <link rel="stylesheet"
+          href="css/style.css">
+
+</head>
+
+<body>
+
+    <nav>
+
+        <h2>EquipRent</h2>
+
+        <div>
+
+            <a href="index.html">
+                Home
+            </a>
+
+            
+
+            <button onclick="logout()">
+                Logout
+            </button>
+
+        </div>
+
+    </nav>
+
+
+    <div class="form-container">
+
+        <h1>Add Equipment</h1>
+
+        <form id="equipmentForm">
+
+            <input
+                type="text"
+                id="title"
+                placeholder="Equipment title"
+                required
+            >
+
+            <textarea
+                id="description"
+                placeholder="Detailed description"
+                rows="5"
+                required>
+            </textarea>
+
+            <input
+                type="url"
+                id="photo"
+                placeholder="Equipment photo URL"
+                required
+            >
+
+            <input
+                type="number"
+                id="quantity"
+                placeholder="Total quantity"
+                min="1"
+                required
+            >
+
+            <input
+                type="date"
+                id="startDate"
+                required
+            >
+
+            <input
+                type="date"
+                id="endDate"
+                required
+            >
+
+            <select id="category" required>
+
+                <option value="">
+                    Select category
+                </option>
+
+                <option value="Cameras">
+                    Cameras
+                </option>
+
+                <option value="Tools">
+                    Tools
+                </option>
+
+                <option value="Camping Gear">
+                    Camping Gear
+                </option>
+
+                <option value="Party Supplies">
+                    Party Supplies
+                </option>
+
+            </select>
+
+            <button type="submit">
+                Add Equipment
+            </button>
+
+        </form>
+
+        <p id="message"></p>
+
+    </div>
+
+
+    <script>
+
+        const user =
+            JSON.parse(
+                localStorage.getItem("user")
+            );
+
+        if (!user || user.role !== "OWNER") {
+
+            alert(
+                "Only owners can access this page."
+            );
+
+            window.location.href =
+                "login.html";
+        }
+
+
+        document.getElementById(
+            "equipmentForm"
+        ).addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                const body =
+                    new URLSearchParams();
+
+                body.append(
+                    "title",
+                    document.getElementById("title").value
+                );
+
+                body.append(
+                    "description",
+                    document.getElementById("description").value
+                );
+
+                body.append(
+                    "photo",
+                    document.getElementById("photo").value
+                );
+
+                body.append(
+                    "quantity",
+                    document.getElementById("quantity").value
+                );
+
+                body.append(
+                    "startDate",
+                    document.getElementById("startDate").value
+                );
+
+                body.append(
+                    "endDate",
+                    document.getElementById("endDate").value
+                );
+
+                body.append(
+                    "category",
+                    document.getElementById("category").value
+                );
+
+                body.append(
+                    "ownerId",
+                    user.id
+                );
+
+                const response =
+                    await fetch(
+                        "http://localhost:8080/api/equipment",
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded"
+                            },
+                            body: body
+                        }
+                    );
+
+                const message =
+                    await response.text();
+
+                document.getElementById(
+                    "message"
+                ).textContent = message;
+
+                if (response.ok) {
+
+                    document.getElementById(
+                        "equipmentForm"
+                    ).reset();
+                }
+            }
+        );
+
+
+        function logout() {
+
+            localStorage.removeItem("user");
+
+            window.location.href =
+                "login.html";
+        }
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>Equipment Details</title>
+
+    <link rel="stylesheet"
+          href="css/style.css">
+
+</head>
+
+<body>
+
+    <nav>
+
+        <h2>EquipRent</h2>
+
+        <a href="index.html">
+            Home
+        </a>
+
+    </nav>
+
+
+    <main>
+
+        <div id="details"></div>
+
+        <hr>
+
+        <h2>Reviews</h2>
+
+        <div id="reviews"></div>
+
+        <div class="form-container">
+
+            <h3>Write a Review</h3>
+
+            <form id="reviewForm">
+
+                <select id="rating">
+
+                    <option value="5">
+                        ★★★★★ - 5
+                    </option>
+
+                    <option value="4">
+                        ★★★★ - 4
+                    </option>
+
+                    <option value="3">
+                        ★★★ - 3
+                    </option>
+
+                    <option value="2">
+                        ★★ - 2
+                    </option>
+
+                    <option value="1">
+                        ★ - 1
+                    </option>
+
+                </select>
+
+                <textarea
+                    id="comment"
+                    placeholder="Write your review"
+                    rows="4"
+                    required>
+                </textarea>
+
+                <button>
+                    Submit Review
+                </button>
+
+            </form>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const API =
+            "http://localhost:8080";
+
+        const user =
+            JSON.parse(
+                localStorage.getItem("user")
+            );
+
+        const params =
+            new URLSearchParams(
+                window.location.search
+            );
+
+        const equipmentId =
+            params.get("id");
+
+
+        async function loadEquipment() {
+
+            const response =
+                await fetch(
+                    `${API}/api/equipment`
+                );
+
+            const equipment =
+                await response.json();
+
+            const item =
+                equipment.find(
+                    e =>
+                        e.id == equipmentId
+                );
+
+            if (!item) {
+
+                document.getElementById(
+                    "details"
+                ).innerHTML =
+                    "<h2>Equipment not found</h2>";
+
+                return;
+            }
+
+            document.getElementById(
+                "details"
+            ).innerHTML = `
+
+                <div class="card">
+
+                    <img
+                        src="${item.photo}"
+                        alt="${item.title}"
+                    >
+
+                    <div class="card-content">
+
+                        <h1>
+                            ${item.title}
+                        </h1>
+
+                        <p>
+                            ${item.description}
+                        </p>
+
+                        <p>
+                            <strong>
+                                Category:
+                            </strong>
+                            ${item.category}
+                        </p>
+
+                        <p>
+                            <strong>
+                                Owner:
+                            </strong>
+                            ${item.ownerName}
+                        </p>
+
+                        <p>
+                            <strong>
+                                Available:
+                            </strong>
+                            ${item.availableQuantity}
+                        </p>
+
+                    </div>
+
+                </div>
+            `;
+        }
+
+
+        async function loadReviews() {
+
+            const response =
+                await fetch(
+                    `${API}/api/reviews?equipmentId=${equipmentId}`
+                );
+
+            const reviews =
+                await response.json();
+
+            const container =
+                document.getElementById(
+                    "reviews"
+                );
+
+            if (reviews.length === 0) {
+
+                container.innerHTML =
+                    "<p>No reviews yet.</p>";
+
+                return;
+            }
+
+            container.innerHTML = "";
+
+            reviews.forEach(review => {
+
+                const div =
+                    document.createElement("div");
+
+                div.className = "card-content";
+
+                div.innerHTML = `
+
+                    <h3>
+                        ${"★".repeat(review.rating)}
+                    </h3>
+
+                    <p>
+                        ${review.comment}
+                    </p>
+
+                    <small>
+                        By ${review.renterName}
+                    </small>
+
+                `;
+
+                container.appendChild(div);
+            });
+        }
+
+
+        document.getElementById(
+            "reviewForm"
+        ).addEventListener(
+            "submit",
+            async function(event) {
+
+                event.preventDefault();
+
+                if (!user) {
+
+                    alert("Please login first.");
+
+                    return;
+                }
+
+                const body =
+                    new URLSearchParams();
+
+                body.append(
+                    "equipmentId",
+                    equipmentId
+                );
+
+                body.append(
+                    "renterId",
+                    user.id
+                );
+
+                body.append(
+                    "rating",
+                    document.getElementById(
+                        "rating"
+                    ).value
+                );
+
+                body.append(
+                    "comment",
+                    document.getElementById(
+                        "comment"
+                    ).value
+                );
+
+                const response =
+                    await fetch(
+                        `${API}/api/reviews`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type":
+                                    "application/x-www-form-urlencoded"
+                            },
+                            body: body
+                        }
+                    );
+
+                alert(
+                    await response.text()
+                );
+
+                document.getElementById(
+                    "reviewForm"
+                ).reset();
+
+                loadReviews();
+            }
+        );
+
+
+        loadEquipment();
+        loadReviews();
+
+    </script>
+
+</body>
+
+</html>

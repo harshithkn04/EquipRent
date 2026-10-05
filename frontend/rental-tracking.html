@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Rental Tracking</title>
+
+    <link rel="stylesheet"
+          href="css/style.css">
+
+</head>
+
+<body>
+
+<nav>
+
+    <h2>EquipRent</h2>
+
+    <div>
+
+        <a href="index.html">
+            Home
+        </a>
+
+        <a href="owner.html">
+            Add Equipment
+        </a>
+
+        <button onclick="logout()">
+            Logout
+        </button>
+
+    </div>
+
+</nav>
+
+
+<main>
+
+    <section class="hero">
+
+        <h1>Rental Tracking</h1>
+
+        <p>
+            Track equipment currently rented by users.
+        </p>
+
+    </section>
+
+
+    <div id="rentalsContainer"
+         class="equipment-grid">
+
+    </div>
+
+</main>
+
+
+<script>
+
+const API =
+    "http://localhost:8080";
+
+const user =
+    JSON.parse(
+        localStorage.getItem("user")
+    );
+
+
+if (!user || user.role !== "OWNER") {
+
+    alert(
+        "Only owners can access rental tracking."
+    );
+
+    window.location.href =
+        "login.html";
+}
+
+
+async function loadRentals() {
+
+    const response =
+        await fetch(
+            `${API}/api/rental-tracking?ownerId=${user.id}`
+        );
+
+    const rentals =
+        await response.json();
+
+    const container =
+        document.getElementById(
+            "rentalsContainer"
+        );
+
+    container.innerHTML = "";
+
+    if (rentals.length === 0) {
+
+        container.innerHTML =
+            "<p>No rentals found.</p>";
+
+        return;
+    }
+
+
+    rentals.forEach(rental => {
+
+        const card =
+            document.createElement("div");
+
+        card.className = "card";
+
+        card.innerHTML = `
+
+            <div class="card-content">
+
+                <h2>
+                    ${rental.equipment}
+                </h2>
+
+                <p>
+                    <strong>Renter:</strong>
+                    ${rental.renter}
+                </p>
+
+                <p>
+                    <strong>Quantity:</strong>
+                    ${rental.quantity}
+                </p>
+
+                <p>
+                    <strong>Rental Date:</strong>
+                    ${rental.rentalDate}
+                </p>
+
+                <p>
+                    <strong>Pickup:</strong>
+                    ${rental.pickupStatus}
+                </p>
+
+                <p>
+                    <strong>Return:</strong>
+                    ${rental.returnStatus}
+                </p>
+
+                <p>
+                    <strong>Condition:</strong>
+                    ${rental.condition}
+                </p>
+
+                <p>
+                    <strong>Damage Report:</strong>
+                    ${rental.damageReport || "None"}
+                </p>
+
+                <hr>
+
+                <select
+                    id="pickup-${rental.id}">
+
+                    <option value="PENDING">
+                        Pickup Pending
+                    </option>
+
+                    <option value="COMPLETED">
+                        Pickup Completed
+                    </option>
+
+                </select>
+
+
+                <select
+                    id="return-${rental.id}">
+
+                    <option value="NOT_RETURNED">
+                        Not Returned
+                    </option>
+
+                    <option value="RETURNED">
+                        Returned
+                    </option>
+
+                </select>
+
+
+                <select
+                    id="condition-${rental.id}">
+
+                    <option value="NOT_RETURNED">
+                        Not Returned
+                    </option>
+
+                    <option value="GOOD">
+                        Good
+                    </option>
+
+                    <option value="DAMAGED">
+                        Damaged
+                    </option>
+
+                </select>
+
+
+                <input
+                    type="text"
+                    id="damage-${rental.id}"
+                    placeholder="Damage report">
+
+
+                <button
+                    onclick="updateRental(${rental.id})">
+
+                    Update Rental
+
+                </button>
+
+            </div>
+        `;
+
+        container.appendChild(card);
+
+    });
+}
+
+
+async function updateRental(rentalId) {
+
+    const body =
+        new URLSearchParams();
+
+    body.append(
+        "rentalId",
+        rentalId
+    );
+
+    body.append(
+        "pickupStatus",
+        document.getElementById(
+            `pickup-${rentalId}`
+        ).value
+    );
+
+    body.append(
+        "returnStatus",
+        document.getElementById(
+            `return-${rentalId}`
+        ).value
+    );
+
+    body.append(
+        "condition",
+        document.getElementById(
+            `condition-${rentalId}`
+        ).value
+    );
+
+    body.append(
+        "damageReport",
+        document.getElementById(
+            `damage-${rentalId}`
+        ).value
+    );
+
+
+    const response =
+        await fetch(
+            `${API}/api/rental-tracking`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded"
+                },
+
+                body: body
+            }
+        );
+
+
+    alert(
+        await response.text()
+    );
+
+    loadRentals();
+}
+
+
+function logout() {
+
+    localStorage.removeItem("user");
+
+    window.location.href =
+        "login.html";
+}
+
+
+loadRentals();
+
+</script>
+
+</body>
+
+</html>
